@@ -1,0 +1,47 @@
+sqoop import \
+--connect jdbc:mysql://localhost:3306/custdb \
+--username root \
+--password root \
+--query "select custid,firstname,age from customers where city='chennai' and \$CONDITIONS" \
+--target-dir /user/hduser/hiveext/ \
+--split-by custid \
+--hive-overwrite \
+--hive-import \
+--hive-partition-key city \
+--hive-partition-value 'chennai' \
+--fields-terminated-by ',' \
+--hive-table default.custinfo \
+--direct \
+--delete-target-dir\
+--create-hive-table 
+
+--create-hive-table => creates hive table. if table exists, it will throw error. If we dont give this, it will create the table if doesnt exists, if exists, it will ignore.
+--delete-target-dir => deletes the directory where sqoop loads data, if already exists. Sqoop will remove this dir at the end of process automatically, but if dir is there when it starts pushing data, we need to remove that.
+20/10/20 04:40:04 INFO hive.HiveImport: Export directory is contains the _SUCCESS file only, removing the directory.
+
+--hive-overwrite => overwirtes data in hive table warehouse dir.
+
+--Loaded only Chennai data
+hadoop fs -ls /user/hive/warehouse/custinfo
+Found 1 items
+drwxr-xr-x   - hduser supergroup          0 2020-10-20 04:06 /user/hive/warehouse/custinfo/city=chennai
+
+
+Loaded only Chennai data
+hive (default)> select * from custinfo;
+OK
+1       karthik 51      chennai
+2       arun    25      chennai
+
+
+
+Data in mysql is
+mysql> select * from customers;
++--------+-----------+----------+-----------+------+------------+
+| custid | firstname | lastname | city      | age  | createdt   |
++--------+-----------+----------+-----------+------+------------+
+|      1 | karthik   | vijay    | chennai   |   51 | 2018-02-01 |
+|      2 | arun      | kumar    | chennai   |   25 | 2018-01-30 |
+|      3 | vishwa    | ajit     | hyderabad | NULL | 2018-02-03 |
+|      4 | bala      | palani   | bangalore |   30 | 2018-02-02 |
++--------+-----------+----------+-----------+------+------------+
